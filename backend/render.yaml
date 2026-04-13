@@ -1,0 +1,47 @@
+# Render Blueprint — Infrastructure as Code
+# Docs: https://docs.render.com/blueprint-spec
+
+services:
+  - type: web
+    name: task-management-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    region: singapore  # closest to BD
+    plan: free         # change to "starter" for production
+    healthCheckPath: /up
+    envVars:
+      - key: APP_NAME
+        value: "Task Management API"
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_URL
+        fromRenderService:
+          type: web
+          name: task-management-api
+          property: host
+      - key: APP_KEY
+        generateValue: true
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: warning
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DATABASE_URL
+        fromDatabase:
+          name: task-management-db
+          property: connectionString
+      - key: SESSION_DRIVER
+        value: cookie
+      - key: CACHE_STORE
+        value: file
+      - key: QUEUE_CONNECTION
+        value: sync
+
+databases:
+  - name: task-management-db
+    plan: free  # change to "starter" for production
+    databaseName: task_management
+    region: singapore
