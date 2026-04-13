@@ -18,6 +18,7 @@ import {
 import { useState } from "react";
 import { useDebounce } from "../hooks/useDebounce";
 import taskService from "../services/taskService";
+import FilterDropdown from "./FilterDropdown";
 import SearchBar from "./SearchBar";
 import TaskCard from "./TaskCard";
 import TaskModal from "./TaskModal";
@@ -29,6 +30,7 @@ const TaskDashboard = () => {
   const [viewMode, setViewMode] = useState("kanban");
   const [editingTask, setEditingTask] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
 
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
 
@@ -93,6 +95,13 @@ const TaskDashboard = () => {
     }
   };
 
+  const filterOptions = [
+    { value: "all", label: "All Tasks" },
+    { value: "pending", label: "Pending" },
+    { value: "in_progress", label: "In Progress" },
+    { value: "completed", label: "Completed" },
+  ];
+
   const columns = [
     {
       id: "pending",
@@ -113,6 +122,11 @@ const TaskDashboard = () => {
       color: "bg-emerald-100/50",
     },
   ];
+
+  const displayColumns =
+    filterStatus === "all"
+      ? columns
+      : columns.filter((col) => col.id === filterStatus);
 
   const getTasksByStatus = (status) =>
     tasks?.filter((task) => task.status === status) || [];
@@ -141,6 +155,12 @@ const TaskDashboard = () => {
             isFetching={isFetching}
             containerClassName="w-full lg:w-72"
             className="h-10"
+          />
+
+          <FilterDropdown
+            value={filterStatus}
+            onChange={setFilterStatus}
+            options={filterOptions}
           />
 
           <div className="flex items-center gap-3">
@@ -233,12 +253,14 @@ const TaskDashboard = () => {
         <div
           className={cn(
             "grid gap-6 transition-all",
-            viewMode === "kanban"
-              ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-              : "grid-cols-1",
+            filterStatus !== "all"
+              ? "grid-cols-1"
+              : viewMode === "kanban"
+                ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+                : "grid-cols-1",
           )}
         >
-          {columns.map((column) => (
+          {displayColumns.map((column) => (
             <div key={column.id} className="flex flex-col gap-4">
               <div className="flex items-center justify-between px-2">
                 <div className="flex items-center gap-2 font-bold text-slate-700">
