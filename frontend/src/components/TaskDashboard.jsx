@@ -252,16 +252,22 @@ const TaskDashboard = () => {
       ) : (
         <div
           className={cn(
-            "grid gap-6 transition-all",
+            "grid gap-6 transition-all duration-500 ease-in-out",
             filterStatus !== "all"
-              ? "grid-cols-1"
+              ? "flex flex-col items-center"
               : viewMode === "kanban"
                 ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
                 : "grid-cols-1",
           )}
         >
           {displayColumns.map((column) => (
-            <div key={column.id} className="flex flex-col gap-4">
+            <div
+              key={column.id}
+              className={cn(
+                "flex flex-col gap-4 animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-500",
+                filterStatus !== "all" && "w-full max-w-lg lg:max-w-md",
+              )}
+            >
               <div className="flex items-center justify-between px-2">
                 <div className="flex items-center gap-2 font-bold text-slate-700">
                   {column.icon}
