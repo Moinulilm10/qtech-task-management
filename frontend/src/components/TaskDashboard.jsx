@@ -123,13 +123,18 @@ const TaskDashboard = () => {
     },
   ];
 
-  const displayColumns =
-    filterStatus === "all"
-      ? columns
-      : columns.filter((col) => col.id === filterStatus);
-
   const getTasksByStatus = (status) =>
     tasks?.filter((task) => task.status === status) || [];
+
+  const displayColumns =
+    filterStatus === "all"
+      ? viewMode === "list"
+        ? [...columns].sort(
+            (a, b) =>
+              getTasksByStatus(b.id).length - getTasksByStatus(a.id).length,
+          )
+        : columns
+      : columns.filter((col) => col.id === filterStatus);
 
   return (
     <div className="flex flex-col gap-8">
@@ -253,7 +258,7 @@ const TaskDashboard = () => {
         <div
           className={cn(
             "grid gap-6 transition-all duration-500 ease-in-out",
-            filterStatus !== "all"
+            filterStatus !== "all" && viewMode === "kanban"
               ? "flex flex-col items-center"
               : viewMode === "kanban"
                 ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
@@ -265,7 +270,9 @@ const TaskDashboard = () => {
               key={column.id}
               className={cn(
                 "flex flex-col gap-4 animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-500",
-                filterStatus !== "all" && "w-full max-w-lg lg:max-w-md",
+                filterStatus !== "all" &&
+                  viewMode === "kanban" &&
+                  "w-full max-w-lg lg:max-w-md",
               )}
             >
               <div className="flex items-center justify-between px-2">
