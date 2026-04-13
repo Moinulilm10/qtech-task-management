@@ -1,8 +1,8 @@
-import api from './api';
+import api from "./api";
 
 const taskService = {
   getAll: async () => {
-    const response = await api.get('/tasks');
+    const response = await api.get("/tasks");
     return response.data;
   },
 
@@ -12,7 +12,7 @@ const taskService = {
   },
 
   create: async (taskData) => {
-    const response = await api.post('/tasks', taskData);
+    const response = await api.post("/tasks", taskData);
     return response.data;
   },
 

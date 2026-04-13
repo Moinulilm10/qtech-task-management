@@ -1,36 +1,83 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import taskService from '../services/taskService';
-import TaskCard from './TaskCard';
-import TaskModal from './TaskModal';
-import { Button } from './ui';
-import { Plus, LayoutGrid, List, CheckCircle2, Clock, PlayCircle, Loader2 } from 'lucide-react';
-import { cn } from './ui';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  CheckCircle2,
+  Clock,
+  LayoutGrid,
+  List,
+  Loader2,
+  PlayCircle,
+  Plus,
+} from "lucide-react";
+import { useState } from "react";
+import taskService from "../services/taskService";
+import TaskCard from "./TaskCard";
+import TaskModal from "./TaskModal";
+import { Button, cn } from "./ui";
 
 const TaskDashboard = () => {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [viewMode, setViewMode] = useState('kanban'); // 'kanban' or 'list'
+  const [viewMode, setViewMode] = useState("kanban");
+  const [editingTask, setEditingTask] = useState(null);
 
-  const { data: tasks, isLoading, isError } = useQuery({
-    queryKey: ['tasks'],
+  const {
+    data: tasks,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["tasks"],
     queryFn: taskService.getAll,
   });
 
   const createMutation = useMutation({
     mutationFn: taskService.create,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tasks'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      setIsModalOpen(false);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => taskService.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      setEditingTask(null);
+      setIsModalOpen(false);
+    },
   });
 
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }) => taskService.updateStatus(id, status),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tasks'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tasks"] }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: taskService.delete,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tasks'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tasks"] }),
   });
+
+  const handleOpenCreateModal = () => {
+    setEditingTask(null);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (task) => {
+    setEditingTask(task);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingTask(null);
+  };
+
+  const handleFormSubmit = (data) => {
+    if (editingTask) {
+      updateMutation.mutate({ id: editingTask.id, data });
+    } else {
+      createMutation.mutate(data);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -45,11 +92,18 @@ const TaskDashboard = () => {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 text-center">
         <div className="h-16 w-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center">
-           <LayoutGrid size={32} />
+          <LayoutGrid size={32} />
         </div>
-        <h2 className="text-xl font-bold text-slate-900">Something went wrong</h2>
-        <p className="text-slate-500 max-w-xs">We couldn't reach the server. Please check your connection and try again.</p>
-        <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['tasks'] })}>
+        <h2 className="text-xl font-bold text-slate-900">
+          Something went wrong
+        </h2>
+        <p className="text-slate-500 max-w-xs">
+          We couldn't reach the server. Please check your connection and try
+          again.
+        </p>
+        <Button
+          onClick={() => queryClient.invalidateQueries({ queryKey: ["tasks"] })}
+        >
           Retry Connection
         </Button>
       </div>
@@ -57,12 +111,28 @@ const TaskDashboard = () => {
   }
 
   const columns = [
-    { id: 'pending', title: 'Pending', icon: <Clock size={16} className="text-amber-500" />, color: 'bg-amber-100/50' },
-    { id: 'in_progress', title: 'In Progress', icon: <PlayCircle size={16} className="text-indigo-500" />, color: 'bg-indigo-100/50' },
-    { id: 'completed', title: 'Completed', icon: <CheckCircle2 size={16} className="text-emerald-500" />, color: 'bg-emerald-100/50' },
+    {
+      id: "pending",
+      title: "Pending",
+      icon: <Clock size={16} className="text-amber-500" />,
+      color: "bg-amber-100/50",
+    },
+    {
+      id: "in_progress",
+      title: "In Progress",
+      icon: <PlayCircle size={16} className="text-indigo-500" />,
+      color: "bg-indigo-100/50",
+    },
+    {
+      id: "completed",
+      title: "Completed",
+      icon: <CheckCircle2 size={16} className="text-emerald-500" />,
+      color: "bg-emerald-100/50",
+    },
   ];
 
-  const getTasksByStatus = (status) => tasks?.filter(task => task.status === status) || [];
+  const getTasksByStatus = (status) =>
+    tasks?.filter((task) => task.status === status) || [];
 
   return (
     <div className="flex flex-col gap-8">
@@ -79,25 +149,32 @@ const TaskDashboard = () => {
         <div className="flex items-center gap-3">
           <div className="flex rounded-lg bg-slate-100 p-1">
             <button
-              onClick={() => setViewMode('kanban')}
+              onClick={() => setViewMode("kanban")}
               className={cn(
                 "rounded-md p-1.5 transition-all",
-                viewMode === 'kanban' ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                viewMode === "kanban"
+                  ? "bg-white text-indigo-600 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700",
               )}
             >
               <LayoutGrid size={20} />
             </button>
             <button
-              onClick={() => setViewMode('list')}
+              onClick={() => setViewMode("list")}
               className={cn(
                 "rounded-md p-1.5 transition-all",
-                viewMode === 'list' ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                viewMode === "list"
+                  ? "bg-white text-indigo-600 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700",
               )}
             >
               <List size={20} />
             </button>
           </div>
-          <Button onClick={() => setIsModalOpen(true)} className="gap-2 shadow-lg shadow-indigo-200">
+          <Button
+            onClick={handleOpenCreateModal}
+            className="gap-2 shadow-lg shadow-indigo-200"
+          >
             <Plus size={18} />
             Add Task
           </Button>
@@ -105,11 +182,15 @@ const TaskDashboard = () => {
       </header>
 
       {/* Kanban Board */}
-      <div className={cn(
-        "grid gap-6 transition-all",
-        viewMode === 'kanban' ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"
-      )}>
-        {columns.map(column => (
+      <div
+        className={cn(
+          "grid gap-6 transition-all",
+          viewMode === "kanban"
+            ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+            : "grid-cols-1",
+        )}
+      >
+        {columns.map((column) => (
           <div key={column.id} className="flex flex-col gap-4">
             <div className="flex items-center justify-between px-2">
               <div className="flex items-center gap-2 font-bold text-slate-700">
@@ -121,23 +202,30 @@ const TaskDashboard = () => {
               </div>
             </div>
 
-            <div className={cn(
-              "flex flex-col gap-4 rounded-3xl p-2 transition-all min-h-[200px]",
-              column.color,
-              viewMode === 'list' && "bg-transparent p-0"
-            )}>
-              {getTasksByStatus(column.id).map(task => (
+            <div
+              className={cn(
+                "flex flex-col gap-4 rounded-3xl p-2 transition-all min-h-[200px]",
+                column.color,
+                viewMode === "list" && "bg-transparent p-0",
+              )}
+            >
+              {getTasksByStatus(column.id).map((task) => (
                 <TaskCard
                   key={task.id}
                   task={task}
-                  onUpdateStatus={(id, status) => updateStatusMutation.mutate({ id, status })}
+                  onUpdateStatus={(id, status) =>
+                    updateStatusMutation.mutate({ id, status })
+                  }
                   onDelete={(id) => deleteMutation.mutate(id)}
+                  onEdit={handleOpenEditModal}
                 />
               ))}
 
               {getTasksByStatus(column.id).length === 0 && (
                 <div className="flex flex-col items-center justify-center p-8 text-center text-slate-400">
-                  <p className="text-xs italic font-medium">No tasks here yet.</p>
+                  <p className="text-xs italic font-medium">
+                    No tasks here yet.
+                  </p>
                 </div>
               )}
             </div>
@@ -147,8 +235,9 @@ const TaskDashboard = () => {
 
       <TaskModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={(data) => createMutation.mutate(data)}
+        onClose={handleCloseModal}
+        onSubmit={handleFormSubmit}
+        initialData={editingTask}
       />
     </div>
   );
