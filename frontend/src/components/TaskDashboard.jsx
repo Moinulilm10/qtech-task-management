@@ -1,4 +1,9 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import {
   CheckCircle2,
   Clock,
@@ -10,7 +15,7 @@ import {
   Search,
   X,
 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useDebounce } from "../hooks/useDebounce";
 import taskService from "../services/taskService";
 import TaskCard from "./TaskCard";
@@ -23,7 +28,7 @@ const TaskDashboard = () => {
   const [viewMode, setViewMode] = useState("kanban");
   const [editingTask, setEditingTask] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
 
   const {
@@ -87,7 +92,6 @@ const TaskDashboard = () => {
     }
   };
 
-
   const columns = [
     {
       id: "pending",
@@ -126,12 +130,12 @@ const TaskDashboard = () => {
 
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
           <div className="relative group w-full lg:w-72">
-            <Search 
-              size={18} 
+            <Search
+              size={18}
               className={cn(
                 "absolute left-3 top-1/2 -translate-y-1/2 transition-colors",
-                searchQuery ? "text-indigo-500" : "text-slate-400"
-              )} 
+                searchQuery ? "text-indigo-500" : "text-slate-400",
+              )}
             />
             <input
               type="text"
@@ -146,12 +150,19 @@ const TaskDashboard = () => {
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
               {isFetching && searchQuery && (
-                <Loader2 size={14} className="animate-spin text-indigo-500 mr-1" />
+                <Loader2
+                  size={14}
+                  className="animate-spin text-indigo-500 mr-1"
+                />
               )}
               {searchQuery && (
                 <button
-                  onClick={() => setSearchQuery("")}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    setSearchQuery("");
+                  }}
                   className="p-0.5 rounded-full hover:bg-slate-100 text-slate-400 transition-colors"
+                  aria-label="Clear search"
                 >
                   <X size={14} />
                 </button>
@@ -201,7 +212,9 @@ const TaskDashboard = () => {
       {isLoading ? (
         <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
           <Loader2 className="animate-spin text-indigo-600" size={40} />
-          <p className="text-slate-500 font-medium">Loading your workspace...</p>
+          <p className="text-slate-500 font-medium">
+            Loading your workspace...
+          </p>
         </div>
       ) : isError ? (
         <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 text-center">
@@ -216,7 +229,9 @@ const TaskDashboard = () => {
             again.
           </p>
           <Button
-            onClick={() => queryClient.invalidateQueries({ queryKey: ["tasks"] })}
+            onClick={() =>
+              queryClient.invalidateQueries({ queryKey: ["tasks"] })
+            }
           >
             Retry Connection
           </Button>
@@ -229,11 +244,12 @@ const TaskDashboard = () => {
           <div className="flex flex-col gap-1">
             <h2 className="text-xl font-bold text-slate-900">No tasks found</h2>
             <p className="text-slate-500 max-w-xs">
-              We couldn't find any tasks matching "{debouncedSearchQuery}". Try a different term.
+              We couldn't find any tasks matching "{debouncedSearchQuery}". Try
+              a different term.
             </p>
           </div>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => setSearchQuery("")}
             className="mt-2"
           >
@@ -249,48 +265,48 @@ const TaskDashboard = () => {
               : "grid-cols-1",
           )}
         >
-        {columns.map((column) => (
-          <div key={column.id} className="flex flex-col gap-4">
-            <div className="flex items-center justify-between px-2">
-              <div className="flex items-center gap-2 font-bold text-slate-700">
-                {column.icon}
-                {column.title}
-                <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-slate-100 px-1.5 text-[10px] text-slate-400">
-                  {getTasksByStatus(column.id).length}
-                </span>
+          {columns.map((column) => (
+            <div key={column.id} className="flex flex-col gap-4">
+              <div className="flex items-center justify-between px-2">
+                <div className="flex items-center gap-2 font-bold text-slate-700">
+                  {column.icon}
+                  {column.title}
+                  <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-slate-100 px-1.5 text-[10px] text-slate-400">
+                    {getTasksByStatus(column.id).length}
+                  </span>
+                </div>
+              </div>
+
+              <div
+                className={cn(
+                  "flex flex-col gap-4 rounded-3xl p-2 transition-all min-h-[200px]",
+                  column.color,
+                  viewMode === "list" && "bg-transparent p-0",
+                )}
+              >
+                {getTasksByStatus(column.id).map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onUpdateStatus={(id, status) =>
+                      updateStatusMutation.mutate({ id, status })
+                    }
+                    onDelete={(id) => deleteMutation.mutate(id)}
+                    onEdit={handleOpenEditModal}
+                  />
+                ))}
+
+                {getTasksByStatus(column.id).length === 0 && (
+                  <div className="flex flex-col items-center justify-center p-8 text-center text-slate-400">
+                    <p className="text-xs italic font-medium">
+                      No tasks here yet.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
-
-            <div
-              className={cn(
-                "flex flex-col gap-4 rounded-3xl p-2 transition-all min-h-[200px]",
-                column.color,
-                viewMode === "list" && "bg-transparent p-0",
-              )}
-            >
-              {getTasksByStatus(column.id).map((task) => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  onUpdateStatus={(id, status) =>
-                    updateStatusMutation.mutate({ id, status })
-                  }
-                  onDelete={(id) => deleteMutation.mutate(id)}
-                  onEdit={handleOpenEditModal}
-                />
-              ))}
-
-              {getTasksByStatus(column.id).length === 0 && (
-                <div className="flex flex-col items-center justify-center p-8 text-center text-slate-400">
-                  <p className="text-xs italic font-medium">
-                    No tasks here yet.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
       )}
 
       <TaskModal

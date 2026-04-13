@@ -15,18 +15,17 @@ class TaskController extends Controller
         try {
             $query = Task::query();
 
-            if ($request->has('search')) {
+            if ($request->has('search') && $request->query('search') !== '') {
                 $search = $request->query('search');
-                
-                // Basic validation for search length to prevent DOS-style long queries
+
                 if (strlen($search) > 100) {
                     return response()->json(['error' => 'Search query too long'], 422);
                 }
 
-                $query->where(function($q) use ($search) {
-                    $q->where('title', 'LIKE', "%{$search}%")
-                      ->orWhere('description', 'LIKE', "%{$search}%");
-                });
+                $escapedSearch = str_replace(['%', '_'], ['\%', '\_'], $search);
+
+
+                $query->where('title', 'ILIKE', "%{$escapedSearch}%");
             }
 
             return response()->json($query->latest()->get());
