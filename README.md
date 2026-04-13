@@ -88,5 +88,3 @@ npm run dev
 This project is licensed under the MIT License.
 
 ---
-
-**Developed by [Moinul Islam](mailto:moinulilm10@gmail.com)**

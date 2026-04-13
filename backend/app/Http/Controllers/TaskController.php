@@ -25,7 +25,8 @@ class TaskController extends Controller
                 $escapedSearch = str_replace(['%', '_'], ['\%', '\_'], $search);
 
 
-                $query->where('title', 'ILIKE', "%{$escapedSearch}%");
+                $operator = \Illuminate\Support\Facades\DB::getDriverName() === 'pgsql' ? 'ILIKE' : 'LIKE';
+                $query->where('title', $operator, "%{$escapedSearch}%");
             }
 
             return response()->json($query->latest()->get());
