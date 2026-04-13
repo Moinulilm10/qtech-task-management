@@ -7,8 +7,11 @@ import {
   Loader2,
   PlayCircle,
   Plus,
+  Search,
+  X,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useDebounce } from "../hooks/useDebounce";
 import taskService from "../services/taskService";
 import TaskCard from "./TaskCard";
 import TaskModal from "./TaskModal";
@@ -19,14 +22,17 @@ const TaskDashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState("kanban");
   const [editingTask, setEditingTask] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  const debouncedSearchQuery = useDebounce(searchQuery, 400);
 
   const {
     data: tasks,
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["tasks"],
-    queryFn: taskService.getAll,
+    queryKey: ["tasks", debouncedSearchQuery],
+    queryFn: () => taskService.getAll(debouncedSearchQuery),
   });
 
   const createMutation = useMutation({
@@ -146,50 +152,104 @@ const TaskDashboard = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex rounded-lg bg-slate-100 p-1">
-            <button
-              onClick={() => setViewMode("kanban")}
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+          <div className="relative group w-full lg:w-72">
+            <Search 
+              size={18} 
               className={cn(
-                "rounded-md p-1.5 transition-all",
-                viewMode === "kanban"
-                  ? "bg-white text-indigo-600 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700",
-              )}
-            >
-              <LayoutGrid size={20} />
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={cn(
-                "rounded-md p-1.5 transition-all",
-                viewMode === "list"
-                  ? "bg-white text-indigo-600 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700",
-              )}
-            >
-              <List size={20} />
-            </button>
+                "absolute left-3 top-1/2 -translate-y-1/2 transition-colors",
+                searchQuery ? "text-indigo-500" : "text-slate-400"
+              )} 
+            />
+            <input
+              type="text"
+              placeholder="Search tasks..."
+              value={searchQuery}
+              onChange={(e) => {
+                if (e.target.value.length <= 100) {
+                  setSearchQuery(e.target.value);
+                }
+              }}
+              className="w-full h-10 pl-10 pr-10 rounded-xl border border-slate-200 bg-white text-sm focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-slate-400 shadow-xs"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-slate-100 text-slate-400 transition-colors"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
-          <Button
-            onClick={handleOpenCreateModal}
-            className="gap-2 shadow-lg shadow-indigo-200"
-          >
-            <Plus size={18} />
-            Add Task
-          </Button>
+
+          <div className="flex items-center gap-3">
+            <div className="flex rounded-lg bg-slate-100 p-1">
+              <button
+                onClick={() => setViewMode("kanban")}
+                className={cn(
+                  "rounded-md p-1.5 transition-all text-sm font-medium flex items-center gap-2",
+                  viewMode === "kanban"
+                    ? "bg-white text-indigo-600 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700",
+                )}
+              >
+                <LayoutGrid size={18} />
+                <span className="hidden sm:inline">Kanban</span>
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                className={cn(
+                  "rounded-md p-1.5 transition-all text-sm font-medium flex items-center gap-2",
+                  viewMode === "list"
+                    ? "bg-white text-indigo-600 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700",
+                )}
+              >
+                <List size={18} />
+                <span className="hidden sm:inline">List</span>
+              </button>
+            </div>
+            <Button
+              onClick={handleOpenCreateModal}
+              className="gap-2 shadow-lg shadow-indigo-200 h-10"
+            >
+              <Plus size={18} />
+              <span className="hidden sm:inline">Add Task</span>
+              <span className="sm:hidden">Add</span>
+            </Button>
+          </div>
         </div>
       </header>
 
-      {/* Kanban Board */}
-      <div
-        className={cn(
-          "grid gap-6 transition-all",
-          viewMode === "kanban"
-            ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-            : "grid-cols-1",
-        )}
-      >
+      {/* Kanban Board / Empty State */}
+      {debouncedSearchQuery && tasks?.length === 0 ? (
+        <div className="flex min-h-[300px] flex-col items-center justify-center gap-4 text-center p-8 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-200">
+          <div className="h-16 w-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center">
+            <Search size={32} />
+          </div>
+          <div className="flex flex-col gap-1">
+            <h2 className="text-xl font-bold text-slate-900">No tasks found</h2>
+            <p className="text-slate-500 max-w-xs">
+              We couldn't find any tasks matching "{debouncedSearchQuery}". Try a different term.
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => setSearchQuery("")}
+            className="mt-2"
+          >
+            Clear Search
+          </Button>
+        </div>
+      ) : (
+        <div
+          className={cn(
+            "grid gap-6 transition-all",
+            viewMode === "kanban"
+              ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+              : "grid-cols-1",
+          )}
+        >
         {columns.map((column) => (
           <div key={column.id} className="flex flex-col gap-4">
             <div className="flex items-center justify-between px-2">
@@ -232,6 +292,7 @@ const TaskDashboard = () => {
           </div>
         ))}
       </div>
+      )}
 
       <TaskModal
         isOpen={isModalOpen}

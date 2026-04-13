@@ -10,9 +10,32 @@ class TaskController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(Task::latest()->get());
+        try {
+            $query = Task::query();
+
+            if ($request->has('search')) {
+                $search = $request->query('search');
+                
+                // Basic validation for search length to prevent DOS-style long queries
+                if (strlen($search) > 100) {
+                    return response()->json(['error' => 'Search query too long'], 422);
+                }
+
+                $query->where(function($q) use ($search) {
+                    $q->where('title', 'LIKE', "%{$search}%")
+                      ->orWhere('description', 'LIKE', "%{$search}%");
+                });
+            }
+
+            return response()->json($query->latest()->get());
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch tasks',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

@@ -1,8 +1,10 @@
 import api from "./api";
 
 const taskService = {
-  getAll: async () => {
-    const response = await api.get("/tasks");
+  getAll: async (search = "") => {
+    const response = await api.get("/tasks", {
+      params: search ? { search } : {},
+    });
     return response.data;
   },
 
