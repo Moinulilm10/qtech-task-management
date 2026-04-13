@@ -86,12 +86,12 @@ return [
 
         'pgsql' => [
             'driver' => 'pgsql',
-            'url' => env('DATABASE_URL') ?? env('DB_URL'),
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '5432'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
+            'url' => $url = env('DATABASE_URL') ?? env('DB_URL'),
+            'host' => ($parts = parse_url($url ?? '')) && isset($parts['host']) ? $parts['host'] : env('DB_HOST', '127.0.0.1'),
+            'port' => ($parts = parse_url($url ?? '')) && isset($parts['port']) ? $parts['port'] : env('DB_PORT', '5432'),
+            'database' => ($parts = parse_url($url ?? '')) && isset($parts['path']) ? ltrim($parts['path'], '/') : env('DB_DATABASE', 'laravel'),
+            'username' => ($parts = parse_url($url ?? '')) && isset($parts['user']) ? $parts['user'] : env('DB_USERNAME', 'root'),
+            'password' => ($parts = parse_url($url ?? '')) && isset($parts['pass']) ? $parts['pass'] : env('DB_PASSWORD', ''),
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',
             'prefix_indexes' => true,

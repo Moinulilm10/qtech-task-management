@@ -3,6 +3,13 @@ set -e
 
 echo "🚀 Starting Laravel deployment..."
 
+# ---- Clean environment ----
+# Delete local .env to ensure Render's actual environment variables take precedence
+if [ -f .env ]; then
+    echo "🧹 Removing local .env file to prevent configuration poisoning..."
+    rm .env
+fi
+
 # ---- Generate app key if not set ----
 if [ -z "$APP_KEY" ]; then
     echo "⚙️  Generating application key..."
