@@ -4,11 +4,9 @@ set -e
 echo "🚀 Starting Laravel deployment..."
 
 # ---- Clean environment ----
-# Delete local .env to ensure Render's actual environment variables take precedence
-if [ -f .env ]; then
-    echo "🧹 Removing local .env file to prevent configuration poisoning..."
-    rm .env
-fi
+# Ensure we are using the most up-to-date configuration
+# (Laravel prioritizes OS env vars over .env file values)
+php artisan config:clear
 
 # ---- Generate app key if not set ----
 if [ -z "$APP_KEY" ]; then

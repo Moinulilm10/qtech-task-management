@@ -87,11 +87,13 @@ return [
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => $url = env('DATABASE_URL') ?? env('DB_URL'),
-            'host' => ($parts = parse_url($url ?? '')) && isset($parts['host']) ? $parts['host'] : env('DB_HOST', '127.0.0.1'),
-            'port' => ($parts = parse_url($url ?? '')) && isset($parts['port']) ? $parts['port'] : env('DB_PORT', '5432'),
-            'database' => ($parts = parse_url($url ?? '')) && isset($parts['path']) ? ltrim($parts['path'], '/') : env('DB_DATABASE', 'laravel'),
-            'username' => ($parts = parse_url($url ?? '')) && isset($parts['user']) ? $parts['user'] : env('DB_USERNAME', 'root'),
-            'password' => ($parts = parse_url($url ?? '')) && isset($parts['pass']) ? $parts['pass'] : env('DB_PASSWORD', ''),
+            'host' => (($parts = parse_url($url ?? '')) && isset($parts['host'])) ? $parts['host'] : env('DB_HOST', '127.0.0.1'),
+            'port' => ($parts && isset($parts['port'])) ? $parts['port'] : env('DB_PORT', '5432'),
+            'database' => ($parts && isset($parts['path']) && strlen(ltrim($parts['path'], '/')) > 0) 
+                ? ltrim($parts['path'], '/') 
+                : env('DB_DATABASE', 'laravel'),
+            'username' => ($parts && isset($parts['user'])) ? $parts['user'] : env('DB_USERNAME', 'root'),
+            'password' => ($parts && isset($parts['pass'])) ? $parts['pass'] : env('DB_PASSWORD', ''),
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',
             'prefix_indexes' => true,
