@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CheckCircle2,
   Clock,
@@ -30,9 +30,11 @@ const TaskDashboard = () => {
     data: tasks,
     isLoading,
     isError,
+    isFetching,
   } = useQuery({
     queryKey: ["tasks", debouncedSearchQuery],
     queryFn: () => taskService.getAll(debouncedSearchQuery),
+    placeholderData: keepPreviousData,
   });
 
   const createMutation = useMutation({
@@ -85,36 +87,6 @@ const TaskDashboard = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
-        <Loader2 className="animate-spin text-indigo-600" size={40} />
-        <p className="text-slate-500 font-medium">Loading your workspace...</p>
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 text-center">
-        <div className="h-16 w-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center">
-          <LayoutGrid size={32} />
-        </div>
-        <h2 className="text-xl font-bold text-slate-900">
-          Something went wrong
-        </h2>
-        <p className="text-slate-500 max-w-xs">
-          We couldn't reach the server. Please check your connection and try
-          again.
-        </p>
-        <Button
-          onClick={() => queryClient.invalidateQueries({ queryKey: ["tasks"] })}
-        >
-          Retry Connection
-        </Button>
-      </div>
-    );
-  }
 
   const columns = [
     {
@@ -172,14 +144,19 @@ const TaskDashboard = () => {
               }}
               className="w-full h-10 pl-10 pr-10 rounded-xl border border-slate-200 bg-white text-sm focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-slate-400 shadow-xs"
             />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-slate-100 text-slate-400 transition-colors"
-              >
-                <X size={14} />
-              </button>
-            )}
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+              {isFetching && searchQuery && (
+                <Loader2 size={14} className="animate-spin text-indigo-500 mr-1" />
+              )}
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="p-0.5 rounded-full hover:bg-slate-100 text-slate-400 transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
@@ -220,9 +197,31 @@ const TaskDashboard = () => {
           </div>
         </div>
       </header>
-
-      {/* Kanban Board / Empty State */}
-      {debouncedSearchQuery && tasks?.length === 0 ? (
+      {/* Kanban Board / Empty State / Loading / Error */}
+      {isLoading ? (
+        <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
+          <Loader2 className="animate-spin text-indigo-600" size={40} />
+          <p className="text-slate-500 font-medium">Loading your workspace...</p>
+        </div>
+      ) : isError ? (
+        <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 text-center">
+          <div className="h-16 w-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center">
+            <LayoutGrid size={32} />
+          </div>
+          <h2 className="text-xl font-bold text-slate-900">
+            Something went wrong
+          </h2>
+          <p className="text-slate-500 max-w-xs">
+            We couldn't reach the server. Please check your connection and try
+            again.
+          </p>
+          <Button
+            onClick={() => queryClient.invalidateQueries({ queryKey: ["tasks"] })}
+          >
+            Retry Connection
+          </Button>
+        </div>
+      ) : debouncedSearchQuery && tasks?.length === 0 ? (
         <div className="flex min-h-[300px] flex-col items-center justify-center gap-4 text-center p-8 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-200">
           <div className="h-16 w-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center">
             <Search size={32} />
