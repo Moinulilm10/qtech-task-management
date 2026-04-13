@@ -18,6 +18,7 @@ import {
 import { useState } from "react";
 import { useDebounce } from "../hooks/useDebounce";
 import taskService from "../services/taskService";
+import SearchBar from "./SearchBar";
 import TaskCard from "./TaskCard";
 import TaskModal from "./TaskModal";
 import { Button, cn } from "./ui";
@@ -129,46 +130,18 @@ const TaskDashboard = () => {
         </div>
 
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-          <div className="relative group w-full lg:w-72">
-            <Search
-              size={18}
-              className={cn(
-                "absolute left-3 top-1/2 -translate-y-1/2 transition-colors",
-                searchQuery ? "text-indigo-500" : "text-slate-400",
-              )}
-            />
-            <input
-              type="text"
-              placeholder="Search tasks..."
-              value={searchQuery}
-              onChange={(e) => {
-                if (e.target.value.length <= 100) {
-                  setSearchQuery(e.target.value);
-                }
-              }}
-              className="w-full h-10 pl-10 pr-10 rounded-xl border border-slate-200 bg-white text-sm focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-slate-400 shadow-xs"
-            />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-              {isFetching && searchQuery && (
-                <Loader2
-                  size={14}
-                  className="animate-spin text-indigo-500 mr-1"
-                />
-              )}
-              {searchQuery && (
-                <button
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    setSearchQuery("");
-                  }}
-                  className="p-0.5 rounded-full hover:bg-slate-100 text-slate-400 transition-colors"
-                  aria-label="Clear search"
-                >
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-          </div>
+          <SearchBar
+            value={searchQuery}
+            onChange={(e) => {
+              if (e.target.value.length <= 100) {
+                setSearchQuery(e.target.value);
+              }
+            }}
+            onClear={() => setSearchQuery("")}
+            isFetching={isFetching}
+            containerClassName="w-full lg:w-72"
+            className="h-10"
+          />
 
           <div className="flex items-center gap-3">
             <div className="flex rounded-lg bg-slate-100 p-1">

@@ -31,7 +31,7 @@ export const Button = ({ children, className, variant = "primary", ...props }) =
   );
 };
 
-export const Input = ({ label, error, className, ...props }) => {
+export const Input = ({ label, error, className, leftIcon, rightIcon, ...props }) => {
   return (
     <div className="flex flex-col gap-1.5 w-full">
       {label && (
@@ -39,14 +39,28 @@ export const Input = ({ label, error, className, ...props }) => {
           {label}
         </label>
       )}
-      <input
-        className={cn(
-          "flex w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-400 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500/20 focus-visible:border-indigo-500 transition-all disabled:cursor-not-allowed disabled:opacity-50 shadow-xs",
-          error && "border-rose-500 focus-visible:ring-rose-500/20 focus-visible:border-rose-500",
-          className
+      <div className="relative group/input">
+        {leftIcon && (
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within/input:text-indigo-500">
+            {leftIcon}
+          </div>
         )}
-        {...props}
-      />
+        <input
+          className={cn(
+            "flex w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-400 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500/20 focus-visible:border-indigo-500 transition-all disabled:cursor-not-allowed disabled:opacity-50 shadow-xs",
+            leftIcon && "pl-10",
+            rightIcon && "pr-10",
+            error && "border-rose-500 focus-visible:ring-rose-500/20 focus-visible:border-rose-500",
+            className
+          )}
+          {...props}
+        />
+        {rightIcon && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center">
+            {rightIcon}
+          </div>
+        )}
+      </div>
       {error && (
         <span className="text-xs font-medium text-rose-500 ml-1">{error}</span>
       )}
